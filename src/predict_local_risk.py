@@ -12,7 +12,7 @@ import subprocess
 from urllib import request
 import numpy as np
 import pandas as pd
-
+import sqlite3
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 REPORTS_DIR = PROJECT_ROOT / "reports"
@@ -149,32 +149,36 @@ def is_ephemeral_port(port: int) -> bool:
 
 def load_user_whitelist() -> dict:
     if not WHITELIST_DB_PATH.exists():
-        return {"hosts": [], "ips": [], "ip_ports": []}
+        return {"hosts": [], "ips": [], "ip_ports": [], "records": []}
 
-    result = {"hosts": [], "ips": [], "ip_ports": []}
+    result = {"hosts": [], "ips": [], "ip_ports": [], "records": []}
 
     try:
         with sqlite3.connect(WHITELIST_DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 """
-                SELECT rule_type, value
+                SELECT *
                 FROM whitelist_rules
                 WHERE is_enabled = 1
                 ORDER BY rule_type ASC, value ASC
                 """
             ).fetchall()
 
-        for rule_type, value in rows:
-            if rule_type == "host":
-                result["hosts"].append(value)
-            elif rule_type == "ip":
-                result["ips"].append(value)
-            elif rule_type == "ip_port":
-                result["ip_ports"].append(value)
+        for row in rows:
+            item = dict(row)
+            result["records"].append(item)
+
+            if item["rule_type"] == "host":
+                result["hosts"].append(item["value"])
+            elif item["rule_type"] == "ip":
+                result["ips"].append(item["value"])
+            elif item["rule_type"] == "ip_port":
+                result["ip_ports"].append(item["value"])
 
         return result
     except Exception:
-        return {"hosts": [], "ips": [], "ip_ports": []}
+        return {"hosts": [], "ips": [], "ip_ports": [], "records": []}
 
 
 def try_reverse_dns(ip: str) -> str:
@@ -198,7 +202,39 @@ def host_matches_suffix(host: str, suffixes: set[str]) -> bool:
 
 def is_user_whitelisted(dst_ip: str, dst_port: int, resolved_host: str, whitelist: dict) -> bool:
     host = normalize_host(resolved_host)
+    
+def get_whitelist_match(dst_ip: str, dst_port: int, resolved_host: str, whitelist: dict) -> dict | None:
+    host = normalize_host(resolved_host)
+    ip_port_key = f"{dst_ip}:{dst_port}"
 
+    for item in whitelist.get("records", []):
+        rule_type = str(item.get("rule_type", ""))
+        value = str(item.get("value", ""))
+        if rule_type == "ip" and value == dst_ip:
+            return item
+        if rule_type == "ip_port" and value == ip_port_key:
+            return item
+        if rule_type == "host" and (host == value or host.endswith("." + value)):
+            return item
+
+    return None
+
+
+def whitelist_score_delta(match: dict | None) -> float:
+    if not match:
+        return 0.0
+
+    source = str(match.get("source", "user")).lower()
+    confidence = float(match.get("confidence", 1.0))
+
+    if source == "user":
+        return 2.5 * confidence
+    if source == "system":
+        return 1.5 * confidence
+    if source == "api":
+        return 1.0 * confidence
+
+    return 1.0 * confidence
     if dst_ip in set(whitelist.get("ips", [])):
         return True
 
@@ -720,14 +756,15 @@ def main():
         (df["src_in_local_subnet"] == 1) & (df["dst_in_local_subnet"] == 1)
     ).astype(int)
 
-    # Apply scope filter.
-    df = filter_by_scope(df, args.scope).reset_index(drop=True)
 
     if df.empty:
         raise ValueError("No flows remain after applying the selected scope filter.")
 
     thresholds = build_thresholds(df)
     whitelist = load_user_whitelist()
+
+    # Add endpoint enrichment before whitelist matching.
+    df = enrich_endpoint_info(df)
 
     # Normalize anomaly score.
     df["anomaly_score_norm"] = normalize_scores(df["anomaly_score"])
@@ -750,12 +787,15 @@ def main():
         dst_ip = str(row.get("dst_ip", ""))
         dst_port = int(row["dst_port"])
 
-        whitelisted = is_user_whitelisted(dst_ip, dst_port, resolved_host, whitelist)
+        whitelist_match = get_whitelist_match(dst_ip, dst_port, resolved_host, whitelist)
         trusted_infra = is_trusted_public_infra(resolved_host, dst_port)
 
-        if whitelisted:
-            rule_score = max(rule_score - 2.5, 0.0)
-            reasons.append("User-whitelisted endpoint")
+        if whitelist_match:
+           delta = whitelist_score_delta(whitelist_match)
+           rule_score = max(rule_score - delta, 0.0)
+           reasons.append(
+        f"Whitelisted endpoint ({whitelist_match.get('source', 'user')}, {whitelist_match.get('rule_type', 'unknown')})"
+    )
         elif trusted_infra:
             rule_score = max(rule_score - 1.5, 0.0)
             reasons.append("Trusted public infrastructure host")
@@ -776,9 +816,9 @@ def main():
             risk_level = "Medium"
             reasons.append("Downgraded because destination is trusted public infrastructure")
 
-        if whitelisted and risk_level == "High":
+        if whitelist_match and risk_level == "High":
             risk_level = "Medium"
-            reasons.append("Downgraded because endpoint is user-whitelisted")
+            reasons.append("Downgraded because endpoint is whitelisted")
 
         rule_scores.append(rule_score)
         reasons_all.append("; ".join(reasons) if reasons else "No heuristic trigger")
@@ -789,9 +829,6 @@ def main():
     df["reason"] = reasons_all
     df["final_risk_score"] = final_scores
     df["risk_level"] = risk_levels
-
-    # Add endpoint enrichment.
-    df = enrich_endpoint_info(df)
 
     # Apply optional user-known endpoint overrides.
     df["user_label"] = ""
