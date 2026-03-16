@@ -1,0 +1,217 @@
+{
+  "total_flows": 782,
+  "ip_version_counts": {
+    "ipv4": 573,
+    "ipv6": 209
+  },
+  "proto_counts": {
+    "tcp": 729,
+    "udp": 53
+  },
+  "service_counts": {
+    "tcp_other": 416,
+    "https": 286,
+    "udp_other": 40,
+    "custom_tcp_6001": 21,
+    "mdns": 10,
+    "custom_tcp_6011": 4,
+    "netbios": 2,
+    "custom_tcp_7826": 1,
+    "http": 1,
+    "dns": 1
+  },
+  "network_scope_counts": {
+    "public_to_private": 330,
+    "public_to_public": 201,
+    "private_to_public": 196,
+    "private_to_private": 55
+  },
+  "top_src_ports": {
+    "853": 218,
+    "443": 215,
+    "7001": 48,
+    "5353": 10,
+    "56384": 1,
+    "56648": 1,
+    "56501": 1,
+    "56491": 1,
+    "56492": 1,
+    "56505": 1,
+    "56512": 1,
+    "56515": 1,
+    "56186": 1,
+    "56926": 1,
+    "56502": 1,
+    "56635": 1,
+    "56644": 1,
+    "56638": 1,
+    "56196": 1,
+    "56763": 1
+  },
+  "top_dst_ports": {
+    "853": 144,
+    "443": 71,
+    "8325": 37,
+    "6001": 21,
+    "5353": 10,
+    "6011": 4,
+    "63561": 2,
+    "51525": 1,
+    "56890": 1,
+    "56614": 1,
+    "56633": 1,
+    "56788": 1,
+    "56786": 1,
+    "56792": 1,
+    "56621": 1,
+    "56794": 1,
+    "56791": 1,
+    "56784": 1,
+    "56789": 1,
+    "56647": 1
+  },
+  "top_src_ips": {
+    "192.168.1.173": 197,
+    "120.53.53.53": 61,
+    "1.12.12.21": 60,
+    "2400:3200:baba::1": 52,
+    "2400:3200::1": 52,
+    "240e:393:3219:9550:709f:cf42:167a:72bc": 48,
+    "192.168.1.148": 39,
+    "2406:da14:dd5:18a5:92a0:b82d:cba2:d736": 16,
+    "2406:da14:1cb0:deb9:1592:7d40:41d9:5445": 16,
+    "2406:da14:dd5:18fa:9272:277f:67e9:d954": 16,
+    "111.124.203.34": 8,
+    "111.124.203.50": 8,
+    "115.238.230.10": 6,
+    "115.238.230.13": 6,
+    "115.238.230.17": 6
+  },
+  "top_dst_ips": {
+    "192.168.1.173": 332,
+    "240e:393:3219:9550:709f:cf42:167a:72bc": 153,
+    "223.5.5.5": 102,
+    "223.6.6.6": 53,
+    "255.255.255.255": 37,
+    "209.9.200.159": 21,
+    "223.252.215.2": 6,
+    "224.0.0.251": 5,
+    "fe80::80f:fc10:f7e3:fdae": 4,
+    "69.30.197.146": 4,
+    "240e:f7:8e00:44a:303::a": 4,
+    "240e:f7:8e00:44a:303::b": 4,
+    "240e:938:a07:6:0:14:203:54": 3,
+    "240e:938:a07:6:0:14:203:37": 3,
+    "240e:938:a07:6:0:14:203:52": 2
+  },
+  "important_port_stats": {
+    "53": {
+      "flow_count": 1,
+      "avg_duration": 0.0043098926544189,
+      "avg_total_bytes": 233.0,
+      "network_scope_counts": {
+        "private_to_private": 1
+      },
+      "service_counts": {
+        "dns": 1
+      }
+    },
+    "80": {
+      "flow_count": 1,
+      "avg_duration": 60.06815004348755,
+      "avg_total_bytes": 1928.0,
+      "network_scope_counts": {
+        "public_to_public": 1
+      },
+      "service_counts": {
+        "http": 1
+      }
+    },
+    "443": {
+      "flow_count": 286,
+      "avg_duration": 7.654392291615893,
+      "avg_total_bytes": 19778.61188811189,
+      "network_scope_counts": {
+        "public_to_private": 208,
+        "public_to_public": 53,
+        "private_to_public": 25
+      },
+      "service_counts": {
+        "https": 286
+      }
+    },
+    "8080": {
+      "flow_count": 0,
+      "avg_duration": 0.0,
+      "avg_total_bytes": 0.0,
+      "network_scope_counts": {},
+      "service_counts": {}
+    },
+    "5353": {
+      "flow_count": 10,
+      "avg_duration": 41.951656913757326,
+      "avg_total_bytes": 4229.9,
+      "network_scope_counts": {
+        "private_to_private": 10
+      },
+      "service_counts": {
+        "mdns": 10
+      }
+    },
+    "6000": {
+      "flow_count": 0,
+      "avg_duration": 0.0,
+      "avg_total_bytes": 0.0,
+      "network_scope_counts": {},
+      "service_counts": {}
+    },
+    "6001": {
+      "flow_count": 21,
+      "avg_duration": 27.808314448311215,
+      "avg_total_bytes": 6530.190476190476,
+      "network_scope_counts": {
+        "private_to_public": 21
+      },
+      "service_counts": {
+        "custom_tcp_6001": 21
+      }
+    },
+    "6010": {
+      "flow_count": 0,
+      "avg_duration": 0.0,
+      "avg_total_bytes": 0.0,
+      "network_scope_counts": {},
+      "service_counts": {}
+    },
+    "6011": {
+      "flow_count": 4,
+      "avg_duration": 72.4565247297287,
+      "avg_total_bytes": 1270.5,
+      "network_scope_counts": {
+        "private_to_public": 4
+      },
+      "service_counts": {
+        "custom_tcp_6011": 4
+      }
+    },
+    "7826": {
+      "flow_count": 1,
+      "avg_duration": 67.79285883903503,
+      "avg_total_bytes": 2632.0,
+      "network_scope_counts": {
+        "private_to_public": 1
+      },
+      "service_counts": {
+        "custom_tcp_7826": 1
+      }
+    }
+  },
+  "summary_stats": {
+    "duration_mean": 6.255546053352258,
+    "duration_median": 0.21135449409484858,
+    "total_packets_mean": 30.04859335038363,
+    "total_bytes_mean": 24335.058823529413,
+    "bytes_per_second_mean": 996685.3178985782,
+    "packets_per_second_mean": 10826.104872449047
+  }
+}

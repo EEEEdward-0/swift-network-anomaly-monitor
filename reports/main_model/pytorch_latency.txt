@@ -1,0 +1,2 @@
+Device: mps
+Average latency per sample: 0.3199 ms

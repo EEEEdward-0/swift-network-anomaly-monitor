@@ -1,0 +1,16 @@
+.DS_Store
+.venv/
+__pycache__/
+*.pyc
+*.log
+*.db
+*.sqlite
+DerivedData/
+build/
+xcuserdata/
+reports/local_analysis/
+*.pcap
+data/processed/
+*.npy
+data/processed/
+*.npy

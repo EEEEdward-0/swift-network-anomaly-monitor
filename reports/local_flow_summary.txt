@@ -1,0 +1,121 @@
+Local Flow Analysis Summary
+========================================
+Total flows: 782
+
+IP version counts:
+  ipv4: 573
+  ipv6: 209
+
+Protocol counts:
+  tcp: 729
+  udp: 53
+
+Top services:
+  tcp_other: 416
+  https: 286
+  udp_other: 40
+  custom_tcp_6001: 21
+  mdns: 10
+  custom_tcp_6011: 4
+  netbios: 2
+  custom_tcp_7826: 1
+  http: 1
+  dns: 1
+
+Network scope counts:
+  public_to_private: 330
+  public_to_public: 201
+  private_to_public: 196
+  private_to_private: 55
+
+Top destination ports:
+  853: 144
+  443: 71
+  8325: 37
+  6001: 21
+  5353: 10
+  6011: 4
+  63561: 2
+  51525: 1
+  56890: 1
+  56614: 1
+  56633: 1
+  56788: 1
+  56786: 1
+  56792: 1
+  56621: 1
+  56794: 1
+  56791: 1
+  56784: 1
+  56789: 1
+  56647: 1
+
+Important port statistics:
+  Port 53:
+    flow_count: 1
+    avg_duration: 0.0043
+    avg_total_bytes: 233.0000
+    network_scope_counts: {'private_to_private': 1}
+    service_counts: {'dns': 1}
+  Port 80:
+    flow_count: 1
+    avg_duration: 60.0682
+    avg_total_bytes: 1928.0000
+    network_scope_counts: {'public_to_public': 1}
+    service_counts: {'http': 1}
+  Port 443:
+    flow_count: 286
+    avg_duration: 7.6544
+    avg_total_bytes: 19778.6119
+    network_scope_counts: {'public_to_private': 208, 'public_to_public': 53, 'private_to_public': 25}
+    service_counts: {'https': 286}
+  Port 8080:
+    flow_count: 0
+    avg_duration: 0.0000
+    avg_total_bytes: 0.0000
+    network_scope_counts: {}
+    service_counts: {}
+  Port 5353:
+    flow_count: 10
+    avg_duration: 41.9517
+    avg_total_bytes: 4229.9000
+    network_scope_counts: {'private_to_private': 10}
+    service_counts: {'mdns': 10}
+  Port 6000:
+    flow_count: 0
+    avg_duration: 0.0000
+    avg_total_bytes: 0.0000
+    network_scope_counts: {}
+    service_counts: {}
+  Port 6001:
+    flow_count: 21
+    avg_duration: 27.8083
+    avg_total_bytes: 6530.1905
+    network_scope_counts: {'private_to_public': 21}
+    service_counts: {'custom_tcp_6001': 21}
+  Port 6010:
+    flow_count: 0
+    avg_duration: 0.0000
+    avg_total_bytes: 0.0000
+    network_scope_counts: {}
+    service_counts: {}
+  Port 6011:
+    flow_count: 4
+    avg_duration: 72.4565
+    avg_total_bytes: 1270.5000
+    network_scope_counts: {'private_to_public': 4}
+    service_counts: {'custom_tcp_6011': 4}
+  Port 7826:
+    flow_count: 1
+    avg_duration: 67.7929
+    avg_total_bytes: 2632.0000
+    network_scope_counts: {'private_to_public': 1}
+    service_counts: {'custom_tcp_7826': 1}
+
+Summary stats:
+  duration_mean: 6.2555
+  duration_median: 0.2114
+  total_packets_mean: 30.0486
+  total_bytes_mean: 24335.0588
+  bytes_per_second_mean: 996685.3179
+  packets_per_second_mean: 10826.1049
