@@ -540,11 +540,12 @@ extension ContentView {
                         
                         realtimeBlock(title: "Result", text: viewModel.resultText)
                         
-                        if !viewModel.detailText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        if !viewModel.detailText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty {
                             realtimeBlock(title: "Detail", text: viewModel.detailText)
                         }
                         
-                        if !viewModel.errorText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        if !viewModel.errorText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty {
+                            
                             realtimeBlock(title: "Error", text: viewModel.errorText, tint: Color.red)
                         }
                         
@@ -760,45 +761,379 @@ extension ContentView {
             }
             
     var demoSection: some View {
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 12) {
-                        sectionTitle("Demo Cases", systemImage: "play.rectangle")
-                        
-                        HStack(spacing: 12) {
-                            summaryChip(title: "Cases", value: "\(viewModel.demoCases.count)")
-                            summaryChip(title: "Selected", value: viewModel.selectedCase == nil ? "None" : "Loaded")
-                            summaryChip(title: "Mode", value: String(describing: viewModel.selectedMode))
-                        }
-                        
-                        Text("Demo area is ready. Current result and detail messages remain synchronized with the main analysis state.")
-                            .font(.system(size: 13, weight: .regular))
-                            .foregroundStyle(mutedText)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        GroupBox {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(alignment: .center, spacing: 10) {
+                    sectionTitle("Model Status", systemImage: "cpu")
+                    Spacer()
                 }
-                .padding(14)
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(surfacePrimary)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(borderSoft, lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.14), radius: 16, x: 0, y: 8)
+
+                HStack(alignment: .top, spacing: 16) {
+                    rotatingDotGlobeCard(
+                        isAnalyzing: viewModel.isAnalyzing,
+                        isCapturing: viewModel.isCapturing,
+                        compact: false
+                    )
+                    .frame(width: 260, alignment: .leading)
+
+                    modelStatusContent(compact: false)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(surfacePrimary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(borderSoft, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.14), radius: 16, x: 0, y: 8)
+    }
+
+    func modelStatusContent(compact: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Core ML inference pipeline")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(mutedText)
+
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 12)
+                ],
+                alignment: .leading,
+                spacing: 12
+            ) {
+                modelStatusInfoCard(title: "Backend", value: "Core ML / ANE", accent: .blue)
+                modelStatusStateCard(
+                    title: "Mode",
+                    value: String(describing: viewModel.selectedMode),
+                    tint: .purple,
+                    icon: "slider.horizontal.3"
+                )
+                modelStatusStateCard(
+                    title: "Inference",
+                    value: viewModel.isAnalyzing ? "Running" : "Ready",
+                    tint: viewModel.isAnalyzing ? .orange : .green,
+                    icon: viewModel.isAnalyzing ? "waveform.path.ecg" : "checkmark.circle"
+                )
+                modelStatusInfoCard(title: "Risk Items", value: "\(viewModel.realtimeResult?.top_risks.count ?? 0)", accent: .red)
+                modelStatusInfoCard(title: "Whitelist", value: "\(viewModel.whitelistRecords.count)", accent: .green)
+                modelStatusStateCard(
+                    title: "Capture",
+                    value: viewModel.isCapturing ? "Live" : "Idle",
+                    tint: viewModel.isCapturing ? .cyan : .gray,
+                    icon: viewModel.isCapturing ? "dot.radiowaves.left.and.right" : "pause.circle"
+                )
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Pipeline")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(primaryText)
+
+                Text("Realtime packet features are extracted locally, evaluated by the current inference pipeline, and linked to host summary, risk ranking, and whitelist matching.")
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(mutedText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(12)
+            .background(surfaceSecondary)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(borderSoft, lineWidth: 1)
+            )
+
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(viewModel.isAnalyzing ? Color.orange : Color.green)
+                    .frame(width: 8, height: 8)
+
+                Text(
+                    viewModel.isAnalyzing
+                    ? "Model is currently processing realtime analysis."
+                    : "Model is ready. Current state remains synchronized with the main analysis pipeline."
+                )
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(mutedText)
+
+                Spacer()
+            }
+            .padding(.top, 2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
             
+    func rotatingDotGlobeCard(isAnalyzing: Bool, isCapturing: Bool, compact: Bool) -> some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+
+            RotatingDotGlobeView(isAnalyzing: isAnalyzing, isCapturing: isCapturing)
+                .frame(width: 220, height: 220)
+                .frame(maxWidth: .infinity, alignment: .center)
+
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, minHeight: 300, alignment: .center)
+        .background(surfaceSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(borderSoft, lineWidth: 1)
+        )
+    }
+    
+    func modelStatusInfoCard(title: String, value: String, accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(accent.opacity(0.85))
+                    .frame(width: 7, height: 7)
+
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(mutedText)
+            }
+
+            Text(value)
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(primaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+        }
+        .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(surfaceSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(borderSoft, lineWidth: 1)
+        )
+    }
+
+    func modelStatusStateCard(title: String, value: String, tint: Color, icon: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(mutedText)
+
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(tint)
+
+                Text(value)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(tint)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                    .allowsTightening(true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(tint.opacity(0.12))
+            )
+        }
+        .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(surfaceSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(borderSoft, lineWidth: 1)
+        )
+    }
+
+    struct RotatingDotGlobeView: View {
+        let isAnalyzing: Bool
+        let isCapturing: Bool
+
+        private let points: [SIMD3<Double>] = {
+            var result: [SIMD3<Double>] = []
+            let latSteps = 18
+            let lonSteps = 36
+
+            for latIndex in 0...latSteps {
+                let lat = -Double.pi / 2 + Double(latIndex) / Double(latSteps) * Double.pi
+                for lonIndex in 0..<lonSteps {
+                    let lon = Double(lonIndex) / Double(lonSteps) * 2 * Double.pi
+                    let x = cos(lat) * cos(lon)
+                    let y = sin(lat)
+                    let z = cos(lat) * sin(lon)
+                    result.append(SIMD3<Double>(x, y, z))
+                }
+            }
+            return result
+        }()
+
+        var body: some View {
+            TimelineView(.animation) { timeline in
+                let t = timeline.date.timeIntervalSinceReferenceDate
+                let rotationSpeed = isAnalyzing ? 1.15 : (isCapturing ? 0.8 : 0.48)
+                let angle = t * rotationSpeed
+                let tilt = isAnalyzing ? 0.45 : 0.34
+                let pulse = isAnalyzing ? (0.92 + 0.12 * sin(t * 3.2)) : (isCapturing ? (0.96 + 0.06 * sin(t * 1.8)) : 1.0)
+                let primaryColor: Color = isAnalyzing ? .orange : (isCapturing ? .cyan : .blue)
+                let secondaryColor: Color = isAnalyzing ? .yellow : (isCapturing ? .blue : .cyan)
+
+                Canvas { context, size in
+                    let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                    let radius = min(size.width, size.height) * 0.34 * pulse
+
+                    let haloRect = CGRect(
+                        x: center.x - radius - 30,
+                        y: center.y - radius - 30,
+                        width: (radius + 30) * 2,
+                        height: (radius + 30) * 2
+                    )
+
+                    context.fill(
+                        Path(ellipseIn: haloRect),
+                        with: .radialGradient(
+                            Gradient(colors: [
+                                primaryColor.opacity(isAnalyzing ? 0.18 : 0.12),
+                                secondaryColor.opacity(0.06),
+                                .clear
+                            ]),
+                            center: center,
+                            startRadius: 8,
+                            endRadius: radius + 30
+                        )
+                    )
+
+                    let ringRect = CGRect(
+                        x: center.x - radius - 8,
+                        y: center.y - radius - 8,
+                        width: (radius + 8) * 2,
+                        height: (radius + 8) * 2
+                    )
+
+                    context.stroke(
+                        Path(ellipseIn: ringRect),
+                        with: .color(primaryColor.opacity(0.16)),
+                        lineWidth: 1.1
+                    )
+
+                    let midRingRect = CGRect(
+                        x: center.x - radius + 12,
+                        y: center.y - radius * 0.72,
+                        width: (radius - 12) * 2,
+                        height: (radius * 0.72) * 2
+                    )
+
+                    context.stroke(
+                        Path(ellipseIn: midRingRect),
+                        with: .color(secondaryColor.opacity(0.14)),
+                        lineWidth: 0.9
+                    )
+
+                    for point in points {
+                        let tilted = rotateX(point, angle: tilt)
+                        let rotated = rotateY(tilted, angle: angle)
+                        let depth = (rotated.z + 1.0) / 2.0
+                        let alpha = 0.18 + depth * 0.82
+                        let dotSize = 1.1 + depth * 3.6
+                        let projectedX = center.x + rotated.x * radius
+                        let projectedY = center.y + rotated.y * radius * 0.9
+
+                        let rect = CGRect(
+                            x: projectedX - dotSize / 2,
+                            y: projectedY - dotSize / 2,
+                            width: dotSize,
+                            height: dotSize
+                        )
+
+                        let dotColor = depth > 0.6 ? primaryColor : secondaryColor
+
+                        context.fill(
+                            Path(ellipseIn: rect),
+                            with: .color(dotColor.opacity(alpha))
+                        )
+                    }
+
+                    if isAnalyzing {
+                        let sweepWidth = radius * 1.45
+                        let sweepX = center.x + CGFloat(sin(t * 2.4)) * radius * 0.46
+                        let sweepRect = CGRect(
+                            x: sweepX - sweepWidth / 2,
+                            y: center.y - radius - 18,
+                            width: sweepWidth,
+                            height: (radius + 18) * 2
+                        )
+
+                        context.fill(
+                            Path(roundedRect: sweepRect, cornerRadius: sweepWidth / 2),
+                            with: .linearGradient(
+                                Gradient(colors: [
+                                    .clear,
+                                    primaryColor.opacity(0.10),
+                                    .clear
+                                ]),
+                                startPoint: CGPoint(x: sweepRect.minX, y: sweepRect.midY),
+                                endPoint: CGPoint(x: sweepRect.maxX, y: sweepRect.midY)
+                            )
+                        )
+                    }
+                }
+            }
+            .background(
+                RadialGradient(
+                    colors: [
+                        (isAnalyzing ? Color.orange : (isCapturing ? Color.cyan : Color.blue)).opacity(0.12),
+                        (isAnalyzing ? Color.yellow : Color.cyan).opacity(0.05),
+                        Color.clear
+                    ],
+                    center: .center,
+                    startRadius: 10,
+                    endRadius: 132
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+
+        private func rotateY(_ p: SIMD3<Double>, angle: Double) -> SIMD3<Double> {
+            let cosA = cos(angle)
+            let sinA = sin(angle)
+            return SIMD3<Double>(
+                p.x * cosA + p.z * sinA,
+                p.y,
+                -p.x * sinA + p.z * cosA
+            )
+        }
+
+        private func rotateX(_ p: SIMD3<Double>, angle: Double) -> SIMD3<Double> {
+            let cosA = cos(angle)
+            let sinA = sin(angle)
+            return SIMD3<Double>(
+                p.x,
+                p.y * cosA - p.z * sinA,
+                p.y * sinA + p.z * cosA
+            )
+        }
+    }
+
     // MARK: - Reusable section helpers
             
     func whitelistRow(_ item: [String: String]) -> some View {
         let rawSource = (item["source"] ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
             .lowercased()
         let value = item["value"] ?? "-"
         let ruleType = item["rule_type"] ?? "unknown"
         let note = item["note"] ?? ""
-        let normalizedNote = note.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalizedNote = note.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).lowercased()
         let inferredSystem = normalizedNote.contains("system") || normalizedNote.contains("seeded")
         let effectiveSource = rawSource.isEmpty ? (inferredSystem ? "system" : "user") : rawSource
         let isSystemEntry = effectiveSource == "system" || effectiveSource == "api"
@@ -1154,7 +1489,7 @@ extension ContentView {
         var deduplicated: [String: RiskItem] = [:]
         
         for item in items {
-            let key = item.dst_ip.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let key = item.dst_ip.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).lowercased()
             
             guard !key.isEmpty else { continue }
             
@@ -1241,6 +1576,13 @@ extension ContentView {
                             .foregroundStyle(primaryText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.9)
+
+                        if let ipType = item.dst_ip_type, !ipType.isEmpty {
+                            Text("IP Type: \(ipTypeDisplayName(ipType))")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(mutedText)
+                                .lineLimit(1)
+                        }
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
@@ -1348,6 +1690,7 @@ extension ContentView {
                     detailRow(title: "Service", value: selected.service_hint.isEmpty ? "-" : selected.service_hint)
                     detailRow(title: "Geo", value: selected.geo_label.isEmpty ? "-" : selected.geo_label)
                     detailRow(title: "Destination", value: "\(selected.dst_ip):\(String(selected.dst_port))")
+                    detailRow(title: "IP Type", value: selected.dst_ip_type.map { ipTypeDisplayName($0) } ?? "-")
                     detailRow(title: "Port", value: String(selected.dst_port))
                 }
                 .padding(16)
@@ -1359,6 +1702,35 @@ extension ContentView {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             }
             
+    func ipTypeDisplayName(_ value: String) -> String {
+        switch value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).lowercased() {
+        case "public":
+            return "Public"
+        case "private":
+            return "Private / LAN"
+        case "loopback":
+            return "Loopback"
+        case "broadcast":
+            return "Broadcast"
+        case "multicast":
+            return "Multicast"
+        case "link_local":
+            return "Link Local"
+        case "reserved":
+            return "Reserved"
+        case "documentation":
+            return "Documentation"
+        case "carrier_nat":
+            return "Carrier NAT"
+        case "unspecified":
+            return "Unspecified"
+        case "invalid":
+            return "Invalid"
+        default:
+            return value
+        }
+    }
+
     func smallTag(_ text: String) -> some View {
                 Text(text)
                     .font(.caption)
@@ -1661,7 +2033,7 @@ extension ContentView {
     func parsePortOwnerLookupOutput(_ output: String) -> (pid: String, process: String, status: String, raw: String)? {
                 let lines = output
                     .components(separatedBy: .newlines)
-                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .map { $0.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines) }
                     .filter { !$0.isEmpty }
                 
                 guard lines.count >= 2 else { return nil }

@@ -220,6 +220,7 @@ struct ContentView: View {
                 }
                 
                 whitelistIPMatchSection
+                whitelistBatchMatchSection
                 
                 if viewModel.whitelistRecords.isEmpty {
                     Text("No whitelist rules yet.")
@@ -360,7 +361,130 @@ struct ContentView: View {
         .font(.system(size: 12, weight: .medium))
         .foregroundStyle(primaryText)
     }
-    
+
+    var whitelistBatchMatchSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Divider()
+
+            Text("Batch IP Match")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(primaryText)
+
+            Text("Enter one IP address per line. IPv4 and IPv6 are both supported.")
+                .font(.system(size: 12, weight: .regular))
+                .foregroundStyle(mutedText)
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Input")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(primaryText)
+
+                    Spacer()
+
+                    Text("One IP per line")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(mutedText)
+                }
+
+                ZStack(alignment: .topLeading) {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(surfaceSecondary.opacity(0.9))
+
+                    if viewModel.whitelistBatchInput.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty {
+                        Text("8.8.8.8\n1.1.1.1\n240e::1\nff02::fb")
+                            .font(.system(size: 12, weight: .regular, design: .monospaced))
+                            .foregroundStyle(mutedText.opacity(0.75))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 12)
+                            .allowsHitTesting(false)
+                    }
+
+                    TextEditor(text: $viewModel.whitelistBatchInput)
+                        .font(.system(size: 12, weight: .regular, design: .monospaced))
+                        .scrollContentBackground(.hidden)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 8)
+                        .frame(minHeight: 96, maxHeight: 132)
+                        .background(Color.clear)
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(borderSoft, lineWidth: 1)
+                )
+            }
+            .padding(12)
+            .background(surfacePrimary.opacity(0.35))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(borderSoft, lineWidth: 1)
+            )
+
+            HStack(spacing: 10) {
+                Button(viewModel.whitelistBatchInProgress ? "Querying..." : "Batch Match") {
+                    viewModel.batchMatchWhitelistIPs()
+                }
+                .frame(width: 128, height: 34)
+                .buttonStyle(.borderedProminent)
+                .disabled(viewModel.whitelistBatchInProgress)
+
+                Button("Clear") {
+                    viewModel.whitelistBatchInput = ""
+                    viewModel.whitelistBatchError = ""
+                    viewModel.whitelistBatchSummaryText = "Paste IPs above and click Batch Match to view the summary."
+                    viewModel.whitelistBatchResultText = "[]"
+                }
+                .frame(width: 88, height: 34)
+                .buttonStyle(.bordered)
+                .disabled(viewModel.whitelistBatchInProgress)
+
+                Spacer()
+            }
+
+            if !viewModel.whitelistBatchError.isEmpty {
+                Text(viewModel.whitelistBatchError)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundStyle(.red)
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Summary")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(primaryText)
+
+                Text(viewModel.whitelistBatchSummaryText)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundStyle(mutedText)
+
+                DisclosureGroup("Raw Batch Result") {
+                    ScrollView {
+                        Text(viewModel.whitelistBatchResultText)
+                            .font(.system(size: 11, weight: .regular, design: .monospaced))
+                            .foregroundStyle(primaryText)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(10)
+                    }
+                    .frame(minHeight: 100, maxHeight: 220)
+                    .background(surfacePrimary.opacity(0.35))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(borderSoft, lineWidth: 1)
+                    )
+                }
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(primaryText)
+            }
+            .padding(12)
+            .background(surfaceSecondary)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(borderSoft, lineWidth: 1)
+            )
+        }
+    }
     @ViewBuilder
     func whitelistMatchMetricCard(title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {

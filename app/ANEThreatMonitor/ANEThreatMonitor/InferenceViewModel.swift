@@ -49,7 +49,7 @@ final class InferenceViewModel: ObservableObject {
     @Published var whitelistValidationMessage: String = ""
     
     // MARK: - Core state
-    
+    @Published var whitelistQueryContextText: String = ""
     @Published var selectedMode: DetectionMode = .balanced
     @Published var demoCases: [DetectionMode.DemoCase] = []
     @Published var selectedCase: DetectionMode.DemoCase?
@@ -66,6 +66,11 @@ final class InferenceViewModel: ObservableObject {
     @Published var whitelistQueryResultText: String = "No IP query yet."
     @Published var whitelistQuerySummaryTitle: String = "No IP query yet."
     @Published var whitelistQuerySummarySubtitle: String = "Enter an IP address to check exact-IP and CIDR matches."
+    @Published var whitelistBatchInput: String = ""
+    @Published var whitelistBatchInProgress: Bool = false
+    @Published var whitelistBatchError: String = ""
+    @Published var whitelistBatchSummaryText: String = "Paste IPs above and click Batch Match to view the summary."
+    @Published var whitelistBatchResultText: String = "[]"
     @Published var whitelistQueryExactValue: String = "-"
     @Published var whitelistQueryBestCIDRValue: String = "-"
     @Published var whitelistQueryCategory: String = "-"
@@ -113,7 +118,7 @@ final class InferenceViewModel: ObservableObject {
     @Published var threatIntelSyncInProgress: Bool = false
     
     func saveThreatIntelAPIKey(_ key: String) {
-        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = key.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         threatIntelAPIKey = trimmed
         UserDefaults.standard.set(trimmed, forKey: "abuseipdb_api_key")
     }
@@ -164,7 +169,7 @@ final class InferenceViewModel: ObservableObject {
 
         var unique: [String: RiskItem] = [:]
         for item in items {
-            let key = item.dst_ip.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let key = item.dst_ip.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).lowercased()
             guard !key.isEmpty else { continue }
 
             if let existing = unique[key] {
@@ -182,7 +187,7 @@ final class InferenceViewModel: ObservableObject {
     }
 
     func syncTopRiskIPsFromAbuseIPDB() {
-        guard !threatIntelAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard !threatIntelAPIKey.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty else {
             appStatusText = "Threat intel API key missing"
             appLogText = "Please set AbuseIPDB API key first"
             return
@@ -362,7 +367,7 @@ final class InferenceViewModel: ObservableObject {
                         self.isCapturing = true
                         self.startCaptureTimer()
                         self.appStatusText = "Capture in progress"
-                        let text = stdoutText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let text = stdoutText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                         if !text.isEmpty {
                             self.appLogText = self.stripThroughputLines(from: text)
                             let throughputText = self.extractThroughputText(from: text)
@@ -378,7 +383,7 @@ final class InferenceViewModel: ObservableObject {
                         self.stopLogRefreshTimer()
                         self.throughputLogText = ""
                         let message = (stderrText.isEmpty ? stdoutText : stderrText)
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                            .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                         self.appStatusText = "Start capture failed (code \(proc.terminationStatus))"
                         self.appLogText = message.isEmpty ? "Unknown start capture error." : message
                     }
@@ -467,7 +472,7 @@ final class InferenceViewModel: ObservableObject {
                         self.selectedRiskItem = self.sortedAndFilteredRisks().first
                         self.appStatusText = "Capture analysis complete"
                         
-                        let stdout = stdoutText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let stdout = stdoutText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                         if !stdout.isEmpty {
                             self.appLogText = self.stripThroughputLines(from: stdout)
                             let throughputText = self.extractThroughputText(from: stdout)
@@ -485,7 +490,7 @@ final class InferenceViewModel: ObservableObject {
                         }
                     } else {
                         let message = (stderrText.isEmpty ? stdoutText : stderrText)
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                            .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                         self.appStatusText = "Stop & analyze failed (code \(proc.terminationStatus))"
                         self.appLogText = message.isEmpty ? "Unknown stop/analyze error." : message
                     }
@@ -620,7 +625,7 @@ final class InferenceViewModel: ObservableObject {
                         self.selectedRiskItem = self.sortedAndFilteredRisks().first
                         self.appStatusText = "Saved PCAP analysis complete"
                         
-                        let stdout = stdoutText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let stdout = stdoutText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                         if !stdout.isEmpty {
                             self.appLogText = self.stripThroughputLines(from: stdout)
                             let throughputText = self.extractThroughputText(from: stdout)
@@ -632,7 +637,7 @@ final class InferenceViewModel: ObservableObject {
                         }
                     } else {
                         let message = (stderrText.isEmpty ? stdoutText : stderrText)
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                            .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                         self.appStatusText = "Analyze saved PCAP failed (code \(process.terminationStatus))"
                         self.appLogText = message
                     }
@@ -712,7 +717,7 @@ final class InferenceViewModel: ObservableObject {
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         guard let text = try? String(contentsOf: url, encoding: .utf8) else { return }
         
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = text.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         if !trimmed.isEmpty {
             let throughputOnly = self.extractThroughputText(from: trimmed)
             let cleanedLog = self.stripThroughputLines(from: trimmed)
@@ -775,13 +780,13 @@ final class InferenceViewModel: ObservableObject {
                     if proc.terminationStatus == 0 {
                         self.loadHostSummary()
                         self.appStatusText = "Ready"
-                        let text = stdoutText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let text = stdoutText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                         if !text.isEmpty {
                             self.appLogText = text
                         }
                     } else {
                         let message = (stderrText.isEmpty ? stdoutText : stderrText)
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                            .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                         self.appStatusText = "Failed to load host summary (code \(proc.terminationStatus))"
                         self.appLogText = message.isEmpty ? "Unknown host summary error." : message
                     }
@@ -1104,9 +1109,9 @@ final class InferenceViewModel: ObservableObject {
                 
                 DispatchQueue.main.async {
                     if process.terminationStatus == 0 {
-                        completion(true, stdout.trimmingCharacters(in: .whitespacesAndNewlines))
+                        completion(true, stdout.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
                     } else {
-                        completion(false, stderr.trimmingCharacters(in: .whitespacesAndNewlines))
+                        completion(false, stderr.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
                     }
                 }
             } catch {
@@ -1152,8 +1157,8 @@ final class InferenceViewModel: ObservableObject {
 
     // 新增白名单前的统一校验入口。
     private func validateWhitelistInput(kind: String, value: String) -> String? {
-        let trimmedKind = kind.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedKind = kind.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).lowercased()
+        let trimmedValue = value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
 
         guard !trimmedValue.isEmpty else {
             return "Whitelist value cannot be empty."
@@ -1182,7 +1187,7 @@ final class InferenceViewModel: ObservableObject {
     }
 
     func matchWhitelistIP() {
-        let ip = whitelistQueryIP.trimmingCharacters(in: .whitespacesAndNewlines)
+        let ip = whitelistQueryIP.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         guard !ip.isEmpty else {
             whitelistQueryError = "Please enter an IP address."
             whitelistQueryResultText = "No IP query yet."
@@ -1193,6 +1198,9 @@ final class InferenceViewModel: ObservableObject {
             whitelistQueryCategory = "-"
             whitelistQuerySource = "-"
             whitelistQueryCIDRMatchCount = 0
+            if whitelistQueryContextText.isEmpty {
+                whitelistQueryContextText = "Current query source: manual input"
+            }
             return
         }
 
@@ -1291,6 +1299,76 @@ final class InferenceViewModel: ObservableObject {
         whitelistQuerySummaryTitle = "No whitelist match"
         whitelistQuerySummarySubtitle = "\(queryIP) does not match any exact-IP or CIDR whitelist rule."
     }
+
+    func batchMatchWhitelistIPs() {
+        let rawInput = whitelistBatchInput.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        guard !rawInput.isEmpty else {
+            whitelistBatchError = "Please enter at least one IP address."
+            whitelistBatchSummaryText = "Paste IPs above and click Batch Match to view the summary."
+            whitelistBatchResultText = "[]"
+            return
+        }
+
+        let ips = rawInput
+            .components(separatedBy: CharacterSet.newlines)
+            .map { $0.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        guard !ips.isEmpty else {
+            whitelistBatchError = "Please enter at least one valid line of input."
+            whitelistBatchSummaryText = "Paste IPs above and click Batch Match to view the summary."
+            whitelistBatchResultText = "[]"
+            return
+        }
+
+        whitelistBatchInProgress = true
+        whitelistBatchError = ""
+        whitelistBatchSummaryText = "Querying \(ips.count) IPs..."
+        whitelistBatchResultText = "[]"
+
+        let joinedIPs = ips.joined(separator: ",")
+
+        runWhitelistScript(
+            arguments: [
+                "--action", "batch-match",
+                "--ips", joinedIPs,
+                "--include-disabled"
+            ]
+        ) { [weak self] success, output in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.whitelistBatchInProgress = false
+
+                if success {
+                    self.whitelistBatchResultText = output.isEmpty ? "[]" : output
+                    self.applyWhitelistBatchPresentation(from: output)
+                } else {
+                    self.whitelistBatchError = output.isEmpty ? "Batch IP query failed." : output
+                    self.whitelistBatchSummaryText = "Batch query failed"
+                    self.whitelistBatchResultText = "[]"
+                }
+            }
+        }
+    }
+
+    private func applyWhitelistBatchPresentation(from output: String) {
+        guard let data = output.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let summary = json["summary"] as? [String: Any] else {
+            whitelistBatchSummaryText = "Batch query completed"
+            return
+        }
+
+        let total = summary["total"] as? Int ?? 0
+        let ipv4 = summary["ipv4_count"] as? Int ?? 0
+        let ipv6 = summary["ipv6_count"] as? Int ?? 0
+        let exact = summary["exact_match_count"] as? Int ?? 0
+        let cidr = summary["cidr_match_count"] as? Int ?? 0
+        let unmatched = summary["unmatched_count"] as? Int ?? 0
+        let errors = summary["error_count"] as? Int ?? 0
+
+        whitelistBatchSummaryText = "Total: \(total) | IPv4: \(ipv4) | IPv6: \(ipv6) | Exact: \(exact) | CIDR: \(cidr) | Unmatched: \(unmatched) | Errors: \(errors)"
+    }
     
     // 新增白名单前的统一校验入口。
     
@@ -1323,8 +1401,8 @@ final class InferenceViewModel: ObservableObject {
         let parts = value.split(separator: ":", omittingEmptySubsequences: false)
         guard parts.count == 2 else { return false }
         
-        let hostPart = String(parts[0]).trimmingCharacters(in: .whitespacesAndNewlines)
-        let portPart = String(parts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let hostPart = String(parts[0]).trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        let portPart = String(parts[1]).trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         
         guard isValidIPAddress(hostPart) else { return false }
         guard let port = Int(portPart), (1...65535).contains(port) else { return false }
@@ -1334,8 +1412,8 @@ final class InferenceViewModel: ObservableObject {
     
     // 手动新增白名单：先校验，失败则弹窗，不写数据库。
     func addWhitelistEntry() {
-        let trimmedKind = whitelistInputKind.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedValue = whitelistInputValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedKind = whitelistInputKind.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        let trimmedValue = whitelistInputValue.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         
         if let message = validateWhitelistInput(kind: trimmedKind, value: trimmedValue) {
             whitelistValidationMessage = message
@@ -1362,14 +1440,14 @@ final class InferenceViewModel: ObservableObject {
     }
     
     func removeWhitelistEntry(kind: String, value: String) {
-        let normalizedKind = kind.trimmingCharacters(in: .whitespacesAndNewlines)
-        let normalizedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedKind = kind.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        let normalizedValue = value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
 
         if let record = whitelistRecords.first(where: {
             ($0["rule_type"] ?? "") == normalizedKind &&
             ($0["value"] ?? "") == normalizedValue
         }) {
-            let source = (record["source"] ?? "user").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let source = (record["source"] ?? "user").trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).lowercased()
             if source != "user" {
                 self.appStatusText = "System entry is locked"
                 self.appLogText = "Only user entries can be removed. Current source: \(source)"
@@ -1498,6 +1576,14 @@ final class InferenceViewModel: ObservableObject {
     
     func selectRiskItem(_ item: RiskItem) {
         selectedRiskItem = item
+
+        let ip = item.dst_ip.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        guard !ip.isEmpty else { return }
+        guard isValidIPAddress(ip) else { return }
+
+        whitelistQueryIP = ip
+        whitelistQueryContextText = "Current query source: selected risk item \(ip)"
+        matchWhitelistIP()
     }
     
     private func riskRank(_ level: String) -> Int {

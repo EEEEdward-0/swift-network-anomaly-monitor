@@ -142,6 +142,7 @@ final class PortInspectorWindowController {
         window.isReleasedWhenClosed = false
         window.contentViewController = hostingController
         window.setFrameAutosaveName("PortInspectorWindow")
+        window.collectionBehavior.insert(.fullScreenPrimary)
 
         let finalFrame = window.frame
         let startWidth = finalFrame.width * 0.94
@@ -163,12 +164,17 @@ final class PortInspectorWindowController {
     }
 
     private func present(window: NSWindow, animated: Bool) {
-        let finalFrame = NSRect(
-            x: window.frame.origin.x - (presentedFrameSize.width - window.frame.width) / 2,
-            y: window.frame.origin.y - (presentedFrameSize.height - window.frame.height) / 2,
-            width: presentedFrameSize.width,
-            height: presentedFrameSize.height
-        )
+        let finalFrame: NSRect
+        if !window.isVisible {
+            finalFrame = NSRect(
+                x: window.frame.origin.x - (presentedFrameSize.width - window.frame.width) / 2,
+                y: window.frame.origin.y - (presentedFrameSize.height - window.frame.height) / 2,
+                width: presentedFrameSize.width,
+                height: presentedFrameSize.height
+            )
+        } else {
+            finalFrame = window.frame
+        }
 
         if animated && !window.isVisible {
             let startWidth = finalFrame.width * 0.94
